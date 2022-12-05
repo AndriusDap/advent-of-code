@@ -1,31 +1,18 @@
 from inputs import day4_input
 
+def between(x, left, right):
+    return x >= left and x <= right
 
-stacks = [[],[],[],[],[],[],[],[],[]]
+fully_contained = 0
+partially_contained = 0
+for line in day4_input.splitlines():
+    [a_start, a_end, b_start, b_end] = [int(l) for x in line.split(",") for l in x.split("-")]
+    
+    if a_start >= b_start and a_end <= b_end or b_start >= a_start and b_end <= a_end:
+        fully_contained += 1
+    
+    if between(a_start, b_start, b_end) or between(a_end, b_start, b_end) or between(b_start, a_start, a_end) or between(b_end, a_start, a_end):
+        partially_contained += 1
 
-for l in day4_input.splitlines():
-    if '[' in l:
-        for i in zip(range(1, 34, 4), range(0, 9)):
-            a, b = i
-            if l[a] != ' ':
-                stacks[b].insert(0, l[a])
-
-part = 2
-[print(s) for s in stacks]
-print("executing the moving")
-for l in day4_input.splitlines():                
-    if "move" in l:
-        [_, count, _, from_stack, _, to_stack] = l.split(" ")
-        target = int(to_stack) - 1
-        source = int(from_stack) - 1
-        count = int(count)        
-        if part == 1:    
-            for i in range(count):
-                stacks[target].append(stacks[source].pop())
-        elif part == 2:
-            stacks[target].extend(stacks[source][-count:])
-            stacks[source] = stacks[source][:len(stacks[source]) - count]
-        
-[print(s) for s in stacks]
-        
-print("".join([s[-1] for s in stacks]))
+print(fully_contained)
+print(partially_contained)
