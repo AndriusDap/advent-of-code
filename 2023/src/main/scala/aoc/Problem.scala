@@ -38,9 +38,9 @@ trait Problem(problemNo: Int, inputMode: InputMode, run: ToRun) {
       val result = runFn.fn(data)
       val end = System.currentTimeMillis()
       val time = (end - start).millis
-      val output = s"$name (${runFn.name}) done in $time: $result"
-      println(output)
-      println()
+      val output = s"$name (${runFn.name}) done in $time: \n$result"
+      //println(output)
+      //println()
       output
     }
 

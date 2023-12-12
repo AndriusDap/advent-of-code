@@ -1,57 +1,84 @@
 package aoc
 
+import java.util.concurrent.ConcurrentHashMap
 import scala.annotation.tailrec
+import scala.collection
+import scala.collection.mutable
+import scala.collection.parallel.immutable.ParVector
 
 def solution12(data: Vector[String]): String = {
   val springs = data.map {
     s =>
-      val pattern = s.split(" ")(0) * 5
+      val pattern = (0 until 5).map(_ => (s.split(" ")(0))).mkString("?")
       val definition = s.split(" ")(1).split(",").map(_.toInt)
-      pattern -> (0 to 5).flatMap(_ => definition)
+      pattern -> (0 until 5).flatMap(_ => definition)
   }
 
-  
-  springs.map {
-    case (s, c) =>
-      val possible = combinations(s).count(matches(_, c))
-      //println(f"For $s we found ${possible} combinations")
+
+  print(s"Total count is ${springs.length}")
+
+  ParVector(springs:_*).zipWithIndex.flatMap {
+    case ((s, c), id) =>
+      val possible = solve(s.toVector, c, new mutable.HashMap())
+      println(f"$id: For $s with $c we found ${possible} combinations")
       possible
-  }.sum.toString
+  }.sum[Long].toString
 }
 
-def matches(pattern: String, fields: Seq[Int]): Boolean = {
-  val parts = pattern.split("\\.").map(_.length).filter(_ != 0)
-  //println(s"For $pattern parts are ${parts.mkString(",")}, looking for $fields")
-  if(parts.length != fields.length) {
-    false
-  } else {
-    parts.zip(fields).forall(_ == _)
+def solve(template: Vector[Char], definition: Seq[Int], cache: scala.collection.mutable.Map[(String, Seq[Int]), Option[Long]]): Option[Long] = {
+  if(cache.contains((template.mkString, definition))) {
+    return cache((template.mkString, definition))
   }
-}
-
-@inline
-def getNthBit(from: Int, bit: Int): Boolean = {
-  (from & 1 << bit) != 0
-}
-
-def combinations(definition: String): Seq[String] = {
-  val unknowns = definition.count(_ == '?')
-  val placeIndices = definition.zipWithIndex.flatMap {
-    case ('?', i) => Some(i)
-    case _ => None
-  }.zipWithIndex.map(_.swap).toMap
-
-  (0 until scala.math.pow(2d, unknowns).intValue()).map { iteration =>
-    val s = definition.toCharArray
-    (0 until unknowns).foreach {
-      case field =>
-        s(placeIndices(field)) = if(getNthBit(iteration, field)) {
-          '.'
-        } else {
-          '#'
-        }
+  if(definition.isEmpty) {
+    if(template.contains('#')) {
+      return None
+    } else {
+      return Some(1)
     }
-    new String(s)
+  }
+
+  val valueToInject = definition.max
+
+  val (value, index) = definition.zipWithIndex.find {
+    case (value, index) => value == valueToInject
+  }.get
+
+  val left = definition.take(index)
+  val right = definition.drop(index + 1)
+  val results = template.zipWithIndex.sliding(valueToInject).flatMap {
+    case x =>
+      val leftFits = if(x.head._2 - 1 >= 0) {
+        template(x.head._2 - 1) != '#'
+      } else {
+        true
+      }
+
+      val rightFits = if (x.last._2 + 1 < template.length) {
+        template(x.last._2 + 1) != '#'
+      } else {
+        true
+      }
+
+      val centerIsOk = !x.exists(_._1 == '.') && x.nonEmpty
+
+      if (leftFits && rightFits && centerIsOk) {
+        val leftTemplate = template.slice(0, x.head._2 - 1).appended('.')
+
+        for {
+          left <- solve(leftTemplate, left, cache)
+          rightTemplate = template.slice(x.last._2 + 2, template.length).prepended('.')
+          right <- solve(rightTemplate, right, cache)
+        } yield left * right
+      } else {
+        None
+      }
+  }.sum
+  if(results != 0){
+    cache.put((template.mkString, definition), Some(results))
+    Some(results)
+  } else {
+    cache.put((template.mkString, definition), None)
+    None
   }
 }
 
