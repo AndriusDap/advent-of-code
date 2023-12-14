@@ -57,8 +57,8 @@ def smudges(field: Vector[Vector[Char]], lineToIgnore: Option[Int]): Option[Int]
     case (outer, inner) =>
       val smudgedField = field.updated(outer, field(outer).updated(inner, invert(field(outer)(inner))))
 
-      //println(s"Field before is $field")
-      //println(s"Field after  is $smudgedField")
+      println(s"Field before is $field")
+      println(s"Field after  is $smudgedField")
       findMirrorLine(smudgedField, lineToIgnore)
   }.headOption
 }
