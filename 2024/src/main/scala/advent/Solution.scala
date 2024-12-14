@@ -8,7 +8,7 @@ import scala.util.Try
 abstract class Solution(day: Int, refetchSamples: Boolean = false):
   def solve(input: String): Any
 
-  def run(): Unit =
+  def run(onlyFinal: Boolean = false): Unit =
     println(s"Running day $day")
 
     val finalInput = fetchInput()
@@ -25,7 +25,8 @@ abstract class Solution(day: Int, refetchSamples: Boolean = false):
       answer.left.foreach(_.printStackTrace())
 
 
-    samples.zipWithIndex.foreach: (sample, index) =>
+    if !onlyFinal then
+      samples.zipWithIndex.foreach: (sample, index) =>
         println(sample)
         doIt(sample, s"Ex. #$index")
 
